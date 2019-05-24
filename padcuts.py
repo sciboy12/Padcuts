@@ -1,22 +1,52 @@
 import numpy as np
 import re
-#from evdev import ecodes, events, UInput, InputDevice, list_devices
-import evdev
-from matplotlib import pyplot as plt
+from evdev import ecodes, events, UInput, InputDevice, list_devices
+#import evdev
+
+#from matplotlib import pyplot as plt
 from Xlib.display import Display
 from Xlib.ext.xtest import fake_input
 d = Display()
 
-
-def get_touchpad_info():
-# Detect touchpad
+'''
+def detect_touchpad():
     devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+    
+    for device in devices:
+            #global touchpad
+            if bool(re.search('Touchpad', device.name)) == True:
+                    #print(evdev.InputDevice(device.path))
+                    touchpad = evdev.InputDevice(device.path)
+                    capabilities=device.capabilities(verbose=True)
+                    abs_info=capabilities.get(('EV_ABS', 3))
+                    abs_x=dict(abs_info[0:1])
+                    abs_y=dict(abs_info[1:2])
+                    return touchpad, abs_x, abs_y
+
+            if bool(re.search('TouchPad', device.name)) == True:
+                    #print(evdev.InputDevice(device.path))
+                    touchpad = evdev.InputDevice(device.path)
+                    #print(touchpad)
+                    capabilities=device.capabilities(verbose=True)
+                    abs_info=capabilities.get(('EV_ABS', 3))
+                    abs_x=dict(abs_info[0:1])
+                    abs_y=dict(abs_info[1:2])
+
+                    return touchpad, abs_x, abs_y
+'''
+
+def detect_touchpad():
+
+    # Detect touchpad
+    devices = [InputDevice(path) for path in list_devices()]
     for device in devices:
             if bool(re.search('Touchpad', device.name)) == True:
+                    #print(device.path)
                     touchpad = InputDevice(device.path)
+                    #print('test')
             if bool(re.search('TouchPad', device.name)) == True:
                     touchpad = InputDevice(device.path)
-
+    #print(device)
     # Set touchpad path
     device=touchpad
 
@@ -29,9 +59,38 @@ def get_touchpad_info():
     abs_x=abs_x.get(('ABS_X', 0))
     abs_y=abs_y.get(('ABS_Y', 1))
 
+    # Set min and max touchpad values
+    x_min=abs_x.min
+    x_max=abs_x.max
+    y_min=abs_y.min
+    y_max=abs_y.max
+    return touchpad, abs_x.min, abs_x.max, abs_y.min, abs_y.max
+
+
+
+
+
+'''
+def detect_touchpad():
+# Detect touchpad
+
+
+    # Set touchpad path
+    device = detect_touchpad_path()
+    #print(device)
+    print(device)
+    # Detect min and max touchpad values
+    #capabilities=device.capabilities(verbose=True)
+    #abs_info=capabilities.get(('EV_ABS', 3))
+    #abs_x=dict(abs_info[0:1])
+    #abs_y=dict(abs_info[1:2])
+
+#    abs_x=abs_x.get(('ABS_X', 0))
+ #   abs_y=abs_y.get(('ABS_Y', 1))
+
 
     return device, abs_x.min, abs_x.max, abs_y.min, abs_y.max
-
+'''
 def gen_grid(rows, cols):
     rows = gen_array(rows)
     cols = gen_array(cols)
@@ -66,54 +125,7 @@ def gen_array(n):
     
 #def check():
 
-def check_position(device, grid, axis, section, limit_min, limit_max):
-    device = evdev.InputDevice(device)
-    event = device.read(device)
-    #event = evdev.InputDevice.read_one(device)
-    print(event)
-    if axis == 'x':
-        if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_X:
-            value = np.interp(event.value,[x_min,x_max],[0,rows])
-        else:
-            value = None
 
-    if axis == 'x':
-        if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_Y:
-            value = np.interp(event.value,[y_min,y_max],[0,cols])
-        else:
-            value = None
-        
-
-    
-    #quadrant_x_limits = grid_parse(value, grid, limit_min, limit_max)
-    section_count = len(grid)
-    #print(section_count)
-    #if value >= quadrant_x_min and value < quadrant_x_max:
-
-    #loop = True
-    #section = 0
-   
-    loop_count = 0
-    while loop_count <= section_count:
-        #print('l')
-        #print('l')
-        #section = grid[0 + 1]
-        #if axis == 'x':
-            
-    
-        if section <= value <= section + 1:
-            result = True   
-        else:
-            result = False
-        loop_count = loop_count + 1
-        #print(loop_count)
-        #print('l')
-    return result
-        
-    #print('end')
-    #print(section)
-   
-    #print(loop_count)
 
 #def in_range():
 #    check_pos():
@@ -138,4 +150,43 @@ def click_mouse(button, release_delay):
     d.sync()
 
 # For testing purposes
-get_touchpad_info()
+#device = detect_touchpad()
+#print(device)
+
+
+def get_position(device, section_count, padorlimits):
+    loop_count = 0
+    while loop_count <= section_count:
+        if axis == 'x':
+            event = devicel.read_one()
+            print(event)
+            #for event in device.read_one():
+            #print(event.type)
+            if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_X:
+                print(value)
+                print(True)
+                value = np.interp(event.value,[x_min,x_max],[0,rows])
+                #check_position(None, )
+        #else:
+            print('l')
+            #return None
+def check_position(device, grid, axis, section, limit_min, limit_max):
+    section_count = len(grid)
+
+    
+    pad = InputDevice(device)
+    value = get_position(pad, section_count)
+
+    print(value)
+
+    print(grid)
+
+    if value != None:
+        if section <= value <= section + 1:
+            result = True   
+        else:
+            result = False
+
+
+            #loop_count = loop_count + 1
+            #return result
