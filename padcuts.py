@@ -1,11 +1,12 @@
-import numpy as np
-import re
+import padcuts as pc
+from time import sleep, time, clock
 from evdev import ecodes, events, UInput, InputDevice, list_devices
-#import evdev
-
-#from matplotlib import pyplot as plt
+import numpy as np
+interp = np.interp
+import re
 from Xlib.display import Display
 from Xlib.ext.xtest import fake_input
+import timeit
 d = Display()
 
 '''
@@ -43,12 +44,21 @@ def detect_touchpad():
             if bool(re.search('Touchpad', device.name)) == True:
                     #print(device.path)
                     touchpad = InputDevice(device.path)
+                    pad = InputDevice(device)
+                    return touchpad
                     #print('test')
             if bool(re.search('TouchPad', device.name)) == True:
                     touchpad = InputDevice(device.path)
+                    pad = InputDevice(device)
+                    return pad
     #print(device)
     # Set touchpad path
-    device=touchpad
+    #device=touchpad
+
+
+
+def detect_capabilities():
+
 
     # Detect min and max touchpad values
     capabilities=device.capabilities(verbose=True)
@@ -65,11 +75,6 @@ def detect_touchpad():
     y_min=abs_y.min
     y_max=abs_y.max
     return touchpad, abs_x.min, abs_x.max, abs_y.min, abs_y.max
-
-
-
-
-
 '''
 def detect_touchpad():
 # Detect touchpad
@@ -94,7 +99,18 @@ def detect_touchpad():
 def gen_grid(rows, cols):
     rows = gen_array(rows)
     cols = gen_array(cols)
-    return rows, cols
+    grid = (rows, cols)
+    #section_count_rows = len(rows)
+    #section_count_cols = len(cols)
+    return grid
+
+#def get_rows(n):
+
+#def get_cols(n):
+
+def get_count(n):
+    count = len(n)
+    return n
 def gen_array(n):
     '''
     #b = int(np.cos(10)*-5)
@@ -112,7 +128,7 @@ def gen_array(n):
     #np.dstack((a1, a1.T)).reshape(-1, 2)
     '''
 
-    rows = 1
+    #rows = 1
     grid = []
     for i in range(n):
         grid.append([])
@@ -154,39 +170,108 @@ def click_mouse(button, release_delay):
 #print(device)
 
 
-def get_position(device, section_count, padorlimits):
+def get_value(pad, axis):
     loop_count = 0
-    while loop_count <= section_count:
-        if axis == 'x':
-            event = devicel.read_one()
-            print(event)
-            #for event in device.read_one():
-            #print(event.type)
-            if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_X:
-                print(value)
-                print(True)
-                value = np.interp(event.value,[x_min,x_max],[0,rows])
-                #check_position(None, )
-        #else:
-            print('l')
-            #return None
-def check_position(device, grid, axis, section, limit_min, limit_max):
-    section_count = len(grid)
+    #while loop_count <= section_count:
+        #if axis == 'x':
+    event = pad.read_one()
+    if event != None:
+        global value
+        global touch
+    #if event != None and axis == 'x' and event.code == ecodes.ABS_X:
+        #if axis == 'x' and event.code == ecodes.ABS_X:
+
+        #if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_X:
+            
+        if event.code == ecodes.ABS_X:
+            #print(value)
+            #print(True)
+            #check_position(None, )
+            
+            value = event.value
+            #print(event.value)
+            
+        else:
+            value = None
+            
+        #if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_PRESSURE:
+        if event.code == ecodes.ABS_PRESSURE:
+
+
+            pressure = event.value
+        else:
+            return None
+        return value, pressure
+#    else:
+ #       return None
+
+def check_position(value, section, section_count, limit_min, limit_max):
 
     
-    pad = InputDevice(device)
-    value = get_position(pad, section_count)
+    #pad = InputDevice(pad)
+    #value = get_position(pad, axis)
+    #value = np.interp(raw_value,[limit_min,limit_max],[0,section_count])
+    #print(value)
 
-    print(value)
+    #print(grid)
 
-    print(grid)
+    if value[0] != None:
+        #start = time()
+        value = interp(value[0],[limit_min,limit_max],[0,section_count])
+        
+        #print(time() - start)
 
-    if value != None:
-        if section <= value <= section + 1:
-            result = True   
-        else:
-            result = False
-
+        #print(value)    
+        #print(value)
+        if section - 1 <= value <= section:
+        
+        #if value <= section:
+            #result = True
+            return value
+    #if 
+    else:
+        #result = False
+        return False
+        #section = section + 1
+        #check()
+    
+    
+    
 
             #loop_count = loop_count + 1
-            #return result
+            
+
+
+def check_position_cycle(pad, value, axis, section_count, limit_min, limit_max):
+    
+    
+    #section = 2
+    #loop = True 
+    #while True:
+    section = 0
+    for x in range(0, section_count):
+        #if value[1] != None:
+        #start = time()
+        result = check_position(value, section, section_count, limit_min, limit_max)
+        #print(start - time())
+        if result == True:
+            return result
+        else:
+            section = section + 1
+            print(section)
+            #return
+            
+            #if section >= section_count:
+            #    loop = False
+            #    return section
+            #else:
+            #    return None
+            #else:
+            #    return
+        #elif value == None:
+        #    button = None
+        #    loop  = False
+        #    return None
+
+        
+
