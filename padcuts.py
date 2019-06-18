@@ -1,12 +1,12 @@
 import padcuts as pc
-from time import sleep, time, clock
+#from time import sleep, time, clock
 from evdev import ecodes, events, UInput, InputDevice, list_devices
 import numpy as np
 interp = np.interp
 import re
 from Xlib.display import Display
 from Xlib.ext.xtest import fake_input
-import timeit
+#import timeit
 d = Display()
 
 '''
@@ -41,23 +41,31 @@ def detect_touchpad():
     # Detect touchpad
     devices = [InputDevice(path) for path in list_devices()]
     for device in devices:
+            #print(device.name)
             if bool(re.search('Touchpad', device.name)) == True:
                     #print(device.path)
                     touchpad = InputDevice(device.path)
-                    pad = InputDevice(device)
-                    return touchpad
+                    #pad = InputDevice(device)
+                    #return touchpad
                     #print('test')
             if bool(re.search('TouchPad', device.name)) == True:
                     touchpad = InputDevice(device.path)
-                    pad = InputDevice(device)
-                    return pad
+                    #pad = InputDevice(device)
+                    #print(touchpad)
+                    return touchpad
+                    
+    capabilities=device.capabilities(verbose=True)
+    abs_info=capabilities.get(('EV_ABS', 3))
+    abs_x=dict(abs_info[0:1])
+    abs_y=dict(abs_info[1:2])
+    return touchpad
     #print(device)
     # Set touchpad path
     #device=touchpad
 
 
 
-def detect_capabilities():
+def detect_capabilities(device):
 
 
     # Detect min and max touchpad values
@@ -74,7 +82,7 @@ def detect_capabilities():
     x_max=abs_x.max
     y_min=abs_y.min
     y_max=abs_y.max
-    return touchpad, abs_x.min, abs_x.max, abs_y.min, abs_y.max
+    return abs_x.min, abs_x.max, abs_y.min, abs_y.max
 '''
 def detect_touchpad():
 # Detect touchpad
@@ -100,13 +108,7 @@ def gen_grid(rows, cols):
     rows = gen_array(rows)
     cols = gen_array(cols)
     grid = (rows, cols)
-    #section_count_rows = len(rows)
-    #section_count_cols = len(cols)
     return grid
-
-#def get_rows(n):
-
-#def get_cols(n):
 
 def get_count(n):
     count = len(n)
@@ -136,17 +138,6 @@ def gen_array(n):
          #   grid[i].append(0)
     return(grid)
 
-
-#def gen_zones():
-    
-#def check():
-
-
-
-#def in_range():
-#    check_pos():
-
-        
 def parse_grid(value, grid, quadrant_x_min, quadrant_x_max):
     
     loop = True
@@ -170,108 +161,48 @@ def click_mouse(button, release_delay):
 #print(device)
 
 
-def get_value(pad, axis):
-    loop_count = 0
-    #while loop_count <= section_count:
-        #if axis == 'x':
+def get_value(pad):
+    if not 'pressure' in locals():
+        pressure = 0
+        
     event = pad.read_one()
+    #print(event)
     if event != None:
-        global value
-        global touch
-    #if event != None and axis == 'x' and event.code == ecodes.ABS_X:
-        #if axis == 'x' and event.code == ecodes.ABS_X:
-
-        #if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_X:
-            
-        if event.code == ecodes.ABS_X:
-            #print(value)
-            #print(True)
-            #check_position(None, )
-            
+        if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_X:
+            valtype = 'x'
             value = event.value
-            #print(event.value)
-            
+            return valtype, value
+        if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_MT_POSITION_X:
+            valtype = 'mt_x'
+            value = event.value
+            return valtype, value
+        
+        elif event.type == ecodes.EV_ABS and event.code == ecodes.ABS_PRESSURE:
+            valtype = 'p'
+            value = event.value
         else:
+            valtype = 'p'
             value = None
-            
-        #if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_PRESSURE:
-        if event.code == ecodes.ABS_PRESSURE:
-
-
-            pressure = event.value
-        else:
-            return None
-        return value, pressure
-#    else:
- #       return None
+        return valtype, value
 
 def check_position(value, section, section_count, limit_min, limit_max):
 
-    
-    #pad = InputDevice(pad)
-    #value = get_position(pad, axis)
-    #value = np.interp(raw_value,[limit_min,limit_max],[0,section_count])
-    #print(value)
+    if value != None:
 
-    #print(grid)
+        value = interp(value,[limit_min,limit_max],[0,section_count])
 
-    if value[0] != None:
-        #start = time()
-        value = interp(value[0],[limit_min,limit_max],[0,section_count])
-        
-        #print(time() - start)
+        if section - 1 <= value <= (section):
 
-        #print(value)    
-        #print(value)
-        if section - 1 <= value <= section:
-        
-        #if value <= section:
-            #result = True
-            return value
-    #if 
-    else:
-        #result = False
-        return False
-        #section = section + 1
-        #check()
-    
-    
-    
+            return section
 
-            #loop_count = loop_count + 1
-            
-
-
-def check_position_cycle(pad, value, axis, section_count, limit_min, limit_max):
-    
-    
-    #section = 2
-    #loop = True 
-    #while True:
-    section = 0
+def check_position_cycle(pad, value, pressure, threshold, axis, section_count, limit_min, limit_max):
+    section = 1
     for x in range(0, section_count):
-        #if value[1] != None:
-        #start = time()
         result = check_position(value, section, section_count, limit_min, limit_max)
-        #print(start - time())
-        if result == True:
-            return result
+        if result != None and pressure >= threshold:
+            result = str(result) + str(result)
+            return (result)
         else:
             section = section + 1
-            print(section)
-            #return
-            
-            #if section >= section_count:
-            #    loop = False
-            #    return section
-            #else:
-            #    return None
-            #else:
-            #    return
-        #elif value == None:
-        #    button = None
-        #    loop  = False
-        #    return None
-
-        
-
+    else:
+        return None
